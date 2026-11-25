@@ -1,0 +1,24 @@
+# sortd configuration. Copy to ~/.config/sortd/config.yaml with `sortd init`.
+target: ~/Downloads
+stability_seconds: 1.5
+output_image_format: jpg # jpg or png
+archive_originals: true
+classifier: heuristic # heuristic, ollama, gemini
+confidence_threshold: 0.75
+ollama_url: http://localhost:11434/api/generate
+ollama_model: qwen2.5:3b
+gemini_model: gemini-2.0-flash
+folders:
+  applications: Applications
+  archives: Archives
+  documents: Documents
+  images: Images
+  audio: Audio
+  video: Video
+  code: Code
+  duplicates: Duplicates
+  review: Needs_Review
+  other: Other
+rules:
+  - pattern: "tax|invoice"
+    folder: Finance
