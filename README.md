@@ -19,7 +19,7 @@
 
 - **Tier 1:** Watchdog completion debounce, image conversion, SHA-256 duplicate detection, and extension/regex routing.
 - **Tier 2:** PDF text extraction and interchangeable Ollama, Gemini, or offline heuristic classifiers. Low confidence goes to `Needs_Review/`.
-- **Safety:** `--dry-run` previews moves, and successful moves are recorded for `sortd undo`.
+- **Safety:** `--dry-run` previews moves, and successful moves are recorded for `sortd undo`. Optional staging holds recent files in `Latest` until they are 24 hours old.
 
 ## 60-second quickstart
 
@@ -57,10 +57,19 @@ classifier: heuristic # ollama, gemini, or heuristic
 confidence_threshold: 0.75
 output_image_format: jpg
 archive_originals: true
+staging_enabled: true
+staging_hours: 24
+latest_folder: Latest
+folders:
+  documents: Documents
 rules:
-  - pattern: "tax|invoice"
+  - pattern: "tax|invoice|receipt"
     folder: Finance
+  - pattern: "Readability|SS26|Lecture"
+    folder: Education
 ```
+
+When staging is enabled, `sortd once` moves files downloaded less than 24 hours ago into `Latest`. Run it again after they age past the delay to classify them. It also processes eligible files already in `Latest`. Creating a folder by hand does not register a rule; configure `folders` to rename a built-in destination or add a `rules` entry to route matching filenames to a custom folder. Rules match filenames and take precedence over classifier output. Existing category folders are left alone; `once` scans files at the Downloads root and the staging folder only.
 
 Ollama uses `ollama_url` and `ollama_model` (`qwen2.5:3b` by default). Gemini reads `GOOGLE_API_KEY`. The heuristic backend needs no API key or network connection.
 

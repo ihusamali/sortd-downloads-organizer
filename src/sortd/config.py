@@ -18,6 +18,9 @@ class SortdConfig(BaseModel):
     archive_originals: bool = True
     classifier: str = "heuristic"
     confidence_threshold: float = Field(default=0.75, ge=0, le=1)
+    staging_enabled: bool = False
+    staging_hours: float = Field(default=24.0, ge=0)
+    latest_folder: str = "Latest"
     ollama_url: str = "http://localhost:11434/api/generate"
     ollama_model: str = "qwen2.5:3b"
     gemini_model: str = "gemini-2.0-flash"
@@ -64,7 +67,8 @@ def write_default_config(path: Path | None = None) -> Path:
         target.write_text(
             "# sortd settings\ntarget: ~/Downloads\nstability_seconds: 1.5\n"
             "output_image_format: jpg\narchive_originals: true\nclassifier: heuristic\n"
-            "confidence_threshold: 0.75\nfolders:\n  applications: Applications\n"
+            "confidence_threshold: 0.75\nstaging_enabled: false\nstaging_hours: 24\n"
+            "latest_folder: Latest\nfolders:\n  applications: Applications\n"
             "  archives: Archives\n  documents: Documents\n  images: Images\n"
             "  audio: Audio\n  video: Video\n  code: Code\n  duplicates: Duplicates\n"
             "  review: Needs_Review\n  other: Other\nrules: []\n",

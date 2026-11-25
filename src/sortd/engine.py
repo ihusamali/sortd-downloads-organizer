@@ -1,6 +1,7 @@
 """Deterministic and semantic file organization pipeline."""
 
 import re
+import time
 from pathlib import Path
 
 from .classifier import BaseClassifier, make_classifier
@@ -75,6 +76,8 @@ class SortEngine:
             destination = self.process(path)
             if destination:
                 results.append((path.name, str(destination)))
+        for path, destination in self.process_staged():
+            results.append((path.name, str(destination)))
         return results
 
     def process(self, path: Path) -> Path | None:
@@ -85,6 +88,19 @@ class SortEngine:
             or path.suffix.lower() in IGNORED_SUFFIXES
         ):
             return None
+        if self.config.staging_enabled:
+            target = self.config.target.expanduser().resolve()
+            latest = (target / self.config.latest_folder).resolve()
+            age_seconds = max(0.0, time.time() - path.stat().st_mtime)
+            delay_seconds = self.config.staging_hours * 3600
+            if path.parent.resolve() == latest:
+                if age_seconds < delay_seconds:
+                    return None
+            elif path.parent.resolve() == target and age_seconds < delay_seconds:
+                return self._move(
+                    path,
+                    self._destination(self.config.latest_folder, path.name),
+                )
         if path.parent.name in set(self.config.folders.values()):
             return None
         digest = sha256_file(path)
@@ -138,6 +154,22 @@ class SortEngine:
                 category = rule.get("folder", category)
                 break
         return self._move(path, self._destination(category, name))
+
+    def process_staged(self) -> list[tuple[Path, Path]]:
+        """Categorize staged files that have aged past the configured delay."""
+        if not self.config.staging_enabled:
+            return []
+        latest = self.config.target / self.config.latest_folder
+        if not latest.is_dir():
+            return []
+        results: list[tuple[Path, Path]] = []
+        for path in sorted(latest.iterdir(), key=lambda item: item.name.lower()):
+            if not path.is_file():
+                continue
+            destination = self.process(path)
+            if destination:
+                results.append((path, destination))
+        return results
 
     def _destination(self, category: str, name: str) -> Path:
         parent = self.config.target

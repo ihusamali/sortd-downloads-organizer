@@ -116,7 +116,7 @@ def demo() -> None:
             console.print(f"  {item.name}")
         # The placeholder is not a decodable image; omit it from processing.
         (sandbox / "IMG_4821.HEIC").unlink()
-        config = SortdConfig(target=sandbox, classifier="heuristic")
+        config = SortdConfig(target=sandbox, classifier="heuristic", staging_enabled=False)
         rows = SortEngine(config, history_file=sandbox / "history.jsonl").scan()
         _table(rows)
         console.print("[bold]After[/bold]")

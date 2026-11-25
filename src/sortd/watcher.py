@@ -72,10 +72,17 @@ def watch(
     observer = Observer()
     observer.schedule(SortHandler(engine, stability_seconds), str(root), recursive=False)
     observer.start()
+    last_staging_sweep = time.monotonic()
     try:
         while stop is None or not stop.wait(0.5):
             if stop is None:
                 time.sleep(0.5)
+            if engine.config.staging_enabled and time.monotonic() - last_staging_sweep >= 60:
+                try:
+                    engine.process_staged()
+                except OSError:
+                    pass
+                last_staging_sweep = time.monotonic()
     except KeyboardInterrupt:
         pass
     finally:

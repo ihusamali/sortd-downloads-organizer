@@ -5,6 +5,9 @@ output_image_format: jpg # jpg or png
 archive_originals: true
 classifier: heuristic # heuristic, ollama, gemini
 confidence_threshold: 0.75
+staging_enabled: false # set true to hold new files in Latest for 24 hours
+staging_hours: 24
+latest_folder: Latest
 ollama_url: http://localhost:11434/api/generate
 ollama_model: qwen2.5:3b
 gemini_model: gemini-2.0-flash

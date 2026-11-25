@@ -20,6 +20,13 @@ def test_init_config(tmp_path: Path) -> None:
     written = write_default_config(target)
     assert written == target
     assert load_config(target).confidence_threshold == 0.75
+    target.write_text(
+        "staging_enabled: true\nstaging_hours: 24\nlatest_folder: Recent\n", encoding="utf-8"
+    )
+    loaded = load_config(target)
+    assert (
+        loaded.staging_enabled and loaded.staging_hours == 24 and loaded.latest_folder == "Recent"
+    )
     target.write_text("target: /tmp/example\nclassifier: heuristic\n", encoding="utf-8")
     assert str(load_config(target).target) == "/tmp/example"
 

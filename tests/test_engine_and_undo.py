@@ -1,3 +1,4 @@
+import time
 from pathlib import Path
 
 import pymupdf
@@ -135,3 +136,44 @@ def test_code_and_calendar_file_routes(tmp_path: Path) -> None:
         source.write_text(filename)
         destination = engine.process(source)
         assert destination == tmp_path / folder / filename
+
+
+def test_staging_holds_recent_file_then_categorizes_after_delay(tmp_path: Path) -> None:
+    source = tmp_path / "new-package.zip"
+    source.write_bytes(b"unique archive for staging test")
+    config = SortdConfig(target=tmp_path, staging_enabled=True, staging_hours=1)
+    engine = SortEngine(config, history_file=tmp_path / "history.jsonl")
+
+    staged = engine.process(source)
+    latest = tmp_path / "Latest" / source.name
+    assert staged == latest
+    assert latest.exists()
+    assert not source.exists()
+
+    old_time = time.time() - 3601
+    import os
+
+    os.utime(latest, (old_time, old_time))
+    rows = engine.scan()
+    categorized = tmp_path / "Archives" / source.name
+    assert (source.name, str(categorized)) in rows
+    assert categorized.exists()
+    assert not latest.exists()
+
+
+def test_staging_dry_run_does_not_create_latest(tmp_path: Path) -> None:
+    source = tmp_path / "recent.zip"
+    source.write_bytes(b"unique dry run")
+    engine = SortEngine(SortdConfig(target=tmp_path, staging_enabled=True), dry_run=True)
+    assert engine.process(source) == tmp_path / "Latest" / source.name
+    assert source.exists()
+    assert not (tmp_path / "Latest").exists()
+
+
+def test_configurable_builtin_destination_folder(tmp_path: Path) -> None:
+    source = tmp_path / "bundle.zip"
+    source.write_bytes(b"custom archives")
+    config = SortdConfig(target=tmp_path, folders={"archives": "Bundles"})
+    destination = SortEngine(config, history_file=tmp_path / "history.jsonl").process(source)
+    assert destination == tmp_path / "Bundles" / source.name
+    assert destination.exists()
