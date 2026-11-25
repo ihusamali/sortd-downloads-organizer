@@ -9,6 +9,19 @@ def test_heuristic_travel_classifier() -> None:
     assert result.confidence > 0.75
 
 
+def test_training_text_is_not_misclassified_as_travel() -> None:
+    text = "In this assignment, you will train a binary logistic regression model."
+    result = HeuristicClassifier().classify(
+        text, "Readability Analysis | SS26 Software Analysis.pdf"
+    )
+    assert result.category == "Education"
+
+
+def test_train_ticket_phrase_is_still_classified_as_travel() -> None:
+    result = HeuristicClassifier().classify("train ticket", "Train_Ticket_Sample.pdf")
+    assert result.category == "Travel"
+
+
 def test_parse_structured_response() -> None:
     result = _parse_json(
         '{"category":"Work","suggested_filename":"2026-01-01_Report.pdf","confidence":0.8}'

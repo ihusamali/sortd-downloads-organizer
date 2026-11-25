@@ -31,7 +31,7 @@ class HeuristicClassifier:
     def classify(self, text: str, filename: str) -> Classification:
         content = f"{filename} {text}".lower()
         rules = [
-            ("Travel", ("ticket", "boarding", "train", "flight", "itinerary")),
+            ("Travel", ("ticket", "boarding", "train station", "railway", "flight", "itinerary")),
             ("Education", ("lecture", "course", "assignment", "university", "student")),
             ("Finance", ("invoice", "receipt", "statement", "payment")),
             ("Legal", ("contract", "agreement", "court", "legal")),
@@ -39,7 +39,7 @@ class HeuristicClassifier:
         ]
         category, confidence = "Documents", 0.42
         for candidate, words in rules:
-            if any(word in content for word in words):
+            if any(re.search(rf"\b{re.escape(word)}\b", content) for word in words):
                 category, confidence = candidate, 0.83
                 break
         clean = re.sub(r"[^A-Za-z0-9]+", "_", Path(filename).stem).strip("_") or "Document"
