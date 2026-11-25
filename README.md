@@ -1,10 +1,14 @@
-# sortd
+# sortd — Local-First Downloads Folder Organizer
 
-![CI](https://github.com/OWNER/sortd/actions/workflows/ci.yml/badge.svg) ![Python](https://img.shields.io/badge/python-3.11%2B-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Style](https://img.shields.io/badge/code%20style-Ruff-D7FF64)
+![CI](https://github.com/ihusamali/sortd-downloads-organizer/actions/workflows/ci.yml/badge.svg) ![Python](https://img.shields.io/badge/python-3.11%2B-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Style](https://img.shields.io/badge/code%20style-Ruff-D7FF64)
 
-**sortd organizes downloads on your machine using fast file rules and optional semantic document classification, with a move history you can undo.**
+**A local-first Downloads folder organizer CLI for macOS and Linux that sorts files by type, routes PDFs by meaning, detects duplicates, and lets you undo every move.**
 
 <!-- Add demo.gif here -->
+
+## What it does
+
+`sortd` is a Python Downloads folder organizer for people who want local processing and reversible file moves. It combines extension and filename rules with optional PDF text classification (offline heuristic, local Ollama, or Gemini), HEIC/WEBP conversion, SHA-256 duplicate routing, dry-run previews, and undo history. It works as a one-shot CLI; a background watcher is available but optional.
 
 ## Why sortd?
 
@@ -24,15 +28,15 @@
 ## 60-second quickstart
 
 ```bash
-uv tool install sortd
-# or: pipx install sortd
-sortd init
+uv tool install git+https://github.com/ihusamali/sortd-downloads-organizer.git
+# or: pipx install git+https://github.com/ihusamali/sortd-downloads-organizer.git
 sortd demo
 sortd once --dry-run
-sortd watch
 ```
 
-For a source checkout: `python -m pip install -e '.[dev]'`.
+The GitHub install works as soon as this repository is public. After the first PyPI release, install by package name with `uv tool install sortd-downloads-organizer` or `pipx install sortd-downloads-organizer`. The installed command is `sortd`.
+
+To contribute from a checkout: `git clone https://github.com/ihusamali/sortd-downloads-organizer.git && cd sortd-downloads-organizer && python -m pip install -e '.[dev]'`.
 
 ## Commands
 
@@ -72,6 +76,12 @@ rules:
 When staging is enabled, `sortd once` moves files downloaded less than 24 hours ago into `Latest`. Run it again after they age past the delay to classify them. It also processes eligible files already in `Latest`. Creating a folder by hand does not register a rule; configure `folders` to rename a built-in destination or add a `rules` entry to route matching filenames to a custom folder. Rules match filenames and take precedence over classifier output. Existing category folders are left alone; `once` scans files at the Downloads root and the staging folder only.
 
 Ollama uses `ollama_url` and `ollama_model` (`qwen2.5:3b` by default). Gemini reads `GOOGLE_API_KEY`. The heuristic backend needs no API key or network connection.
+
+Custom destinations can be set with `folders`; filename patterns in `rules` can route files to folders such as `Finance` or `Education`. sortd does not infer rules from folders that happen to exist in Downloads.
+
+## Package and repository
+
+The repository is `ihusamali/sortd-downloads-organizer`; the installable Python distribution is `sortd-downloads-organizer`, while the shell command is `sortd`. PyPI already has an unrelated project named `sortd`, so the longer distribution name avoids an install collision.
 
 ## Development
 
