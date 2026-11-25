@@ -40,6 +40,12 @@ def test_dry_run_leaves_source(tmp_path: Path) -> None:
     assert source.exists()
 
 
+def test_macos_metadata_files_are_ignored(tmp_path: Path) -> None:
+    source = tmp_path / ".localized"
+    source.write_bytes(b"")
+    assert SortEngine(SortdConfig(target=tmp_path)).process(source) is None
+
+
 def test_partial_download_ignored(tmp_path: Path) -> None:
     source = tmp_path / "x.pdf.part"
     source.write_bytes(b"x")
@@ -119,3 +125,13 @@ def test_webp_conversion_in_engine_and_dry_run(tmp_path: Path) -> None:
 
 def test_missing_target_is_empty(tmp_path: Path) -> None:
     assert SortEngine(SortdConfig(target=tmp_path / "missing")).scan() == []
+
+
+def test_code_and_calendar_file_routes(tmp_path: Path) -> None:
+    config = SortdConfig(target=tmp_path)
+    engine = SortEngine(config, dry_run=True)
+    for filename, folder in (("paper.tex", "Code"), ("calendar.ics", "Documents")):
+        source = tmp_path / filename
+        source.write_text(filename)
+        destination = engine.process(source)
+        assert destination == tmp_path / folder / filename

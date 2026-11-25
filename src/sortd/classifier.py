@@ -3,6 +3,7 @@
 import json
 import os
 import re
+import unicodedata
 from datetime import date
 from pathlib import Path
 from typing import Protocol
@@ -26,22 +27,157 @@ class BaseClassifier(Protocol):
 
 
 class HeuristicClassifier:
-    """Offline keyword classifier."""
+    """Offline classifier using title-weighted phrase signals.
+
+    A neutral Documents result is preferred when the available text only mentions a
+    specialized topic in passing. A single incidental word in page text is not enough.
+    """
+
+    SIGNALS: dict[str, tuple[str, ...]] = {
+        "Travel": (
+            "boarding pass",
+            "flight itinerary",
+            "travel itinerary",
+            "train ticket",
+            "plane ticket",
+            "flight ticket",
+            "hotel reservation",
+            "travel booking",
+            "booking confirmation",
+            "db ticket",
+            "bahn ticket",
+            "fahrkarte",
+            "airline",
+            "departure time",
+            "arrival time",
+            "railway",
+            "passport",
+            "visa application",
+            "travel insurance",
+        ),
+        "Education": (
+            "assignment",
+            "coursework",
+            "lecture",
+            "course syllabus",
+            "syllabus",
+            "university",
+            "student",
+            "transcript of records",
+            "semester",
+            "exam results",
+            "examination",
+            "homework",
+            "exercise sheet",
+            "lab report",
+            "module handbook",
+            "course materials",
+            "professor",
+            "grade report",
+            "task description",
+            "submission due date",
+            "courses",
+            "textbook",
+            "workbook",
+            "coursebook",
+            "lehrwerk",
+            "intensivlehrwerk",
+            "language course",
+            "kurs",
+            "ubungsbuch",
+        ),
+        "Finance": (
+            "invoice",
+            "receipt",
+            "bank statement",
+            "account statement",
+            "tax return",
+            "tax assessment",
+            "payslip",
+            "pay slip",
+            "balance sheet",
+            "payment confirmation",
+            "annual report",
+            "expense report",
+            "billing statement",
+            "vat invoice",
+        ),
+        "Legal": (
+            "contract",
+            "agreement",
+            "court order",
+            "court judgment",
+            "legal notice",
+            "non disclosure agreement",
+            "lease agreement",
+            "rental agreement",
+            "terms and conditions",
+            "privacy policy",
+            "power of attorney",
+            "employment agreement",
+            "settlement agreement",
+        ),
+        "Work": (
+            "meeting minutes",
+            "project plan",
+            "project proposal",
+            "business proposal",
+            "status report",
+            "quarterly report",
+            "performance review",
+            "job application",
+            "cover letter",
+            "curriculum vitae",
+            "resume",
+            "statement of work",
+            "work order",
+            "business plan",
+            "technical specification",
+            "meeting notes",
+            "project report",
+            "anschreiben",
+            "bewerbung",
+            "lebenslauf",
+            "coverletter",
+            "cv",
+            "linkedin",
+            "linkdin",
+        ),
+    }
 
     def classify(self, text: str, filename: str) -> Classification:
-        content = f"{filename} {text}".lower()
-        rules = [
-            ("Travel", ("ticket", "boarding", "train station", "railway", "flight", "itinerary")),
-            ("Education", ("lecture", "course", "assignment", "university", "student")),
-            ("Finance", ("invoice", "receipt", "statement", "payment")),
-            ("Legal", ("contract", "agreement", "court", "legal")),
-            ("Work", ("proposal", "meeting", "project", "report")),
-        ]
-        category, confidence = "Documents", 0.42
-        for candidate, words in rules:
-            if any(re.search(rf"\b{re.escape(word)}\b", content) for word in words):
-                category, confidence = candidate, 0.83
-                break
+        """Classify using document-title cues and multiple content cues."""
+
+        def normalize(value: str) -> str:
+            ascii_text = unicodedata.normalize("NFKD", value.lower().replace("ß", "ss"))
+            ascii_text = "".join(char for char in ascii_text if not unicodedata.combining(char))
+            return re.sub(r"[^a-z0-9]+", " ", ascii_text).strip()
+
+        title = normalize(Path(filename).stem)
+        body = normalize(text[:1000])
+        scores: dict[str, float] = {}
+        for category, phrases in self.SIGNALS.items():
+            score = 0.0
+            if category == "Education" and re.search(r"\bex[0-9]{1,3}\b", title):
+                score += 3.0
+            for phrase in phrases:
+                normalized_phrase = normalize(phrase)
+                if f" {normalized_phrase} " in f" {title} ":
+                    score += 3.0
+                elif f" {normalized_phrase} " in f" {body} ":
+                    score += 0.8
+            scores[category] = score
+
+        ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+        category, score = ranked[0]
+        second_score = ranked[1][1]
+        # Require either a clear title cue or multiple independent body cues.
+        # If categories compete, return the neutral folder instead of guessing.
+        if score < 1.5 or score - second_score < 0.6:
+            category, confidence = "Documents", 0.92
+        else:
+            confidence = min(0.99, 0.75 + score * 0.05)
+
         clean = re.sub(r"[^A-Za-z0-9]+", "_", Path(filename).stem).strip("_") or "Document"
         return Classification(
             category=category,

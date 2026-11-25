@@ -10,14 +10,27 @@ from .extractors import extract_pdf_text
 from .history import append_event, atomic_move
 
 IGNORED_SUFFIXES = {".crdownload", ".part", ".download", ".tmp"}
-IGNORED_NAMES = {".ds_store"}
+IGNORED_NAMES = {".ds_store", ".localized"}
 ROUTES = {
     "applications": {".dmg", ".pkg", ".exe", ".msi", ".deb", ".rpm", ".appimage"},
     "archives": {".zip", ".tar", ".gz", ".tgz", ".bz2", ".xz", ".7z", ".rar"},
     "images": {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".heic", ".webp"},
     "audio": {".mp3", ".wav", ".flac", ".m4a", ".ogg"},
     "video": {".mp4", ".mov", ".mkv", ".avi", ".webm"},
-    "code": {".py", ".js", ".ts", ".html", ".css", ".json", ".yaml", ".yml", ".md", ".sh"},
+    "code": {
+        ".py",
+        ".js",
+        ".ts",
+        ".html",
+        ".css",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".md",
+        ".sh",
+        ".tex",
+        ".cls",
+    },
     "documents": {
         ".pdf",
         ".doc",
@@ -29,6 +42,7 @@ ROUTES = {
         ".txt",
         ".rtf",
         ".csv",
+        ".ics",
     },
 }
 
